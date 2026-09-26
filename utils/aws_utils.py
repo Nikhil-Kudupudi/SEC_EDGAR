@@ -22,8 +22,17 @@ def get_files(bucket_name:str, prefix:str):
             print(file_key)
 def get_file(bucket_name:str, key:str):
     s3_client = get_s3_client()
-    file = s3_client.get_object(Bucket = bucket_name, Key = key) 
+    file = s3_client.get_object(Bucket = bucket_name, Key = key)
     return file['Body'].read().decode("utf-8")
+
+def delete_prefix(bucket_name:str, prefix:str):
+    """Deletes all objects under the given S3 prefix, if any exist."""
+    s3_client = get_s3_client()
+    paginator = s3_client.get_paginator('list_objects_v2')
+    for page in paginator.paginate(Bucket=bucket_name, Prefix=prefix):
+        keys = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
+        if keys:
+            s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": keys})
 
 
 
@@ -32,6 +41,8 @@ def get_file(bucket_name:str, key:str):
 if __name__ == "__main__":
     # get_files(bucket_name="secedgar-nikhil", prefix = "raw/companyfacts")
     file_content = get_file(bucket_name="secedgar-nikhil", key = "raw/companyfacts/CIK0000881695.json")
+    with open("CIK0000881695.json", "w") as f:
+        f.write(file_content)
     
 
 

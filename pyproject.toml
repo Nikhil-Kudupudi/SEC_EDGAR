@@ -9,6 +9,7 @@ dependencies = [
     "fsspec>=2026.9.0",
     "gcsfs>=2026.8.1",
     "polars>=1.44.2",
+    "pyarrow>=25.0.1",
     "python-dotenv>=1.2.3",
     "requests>=2.34.2",
     "s3fs>=0.4.2",
