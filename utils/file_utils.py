@@ -3,27 +3,31 @@ import logging
 import pyarrow as pa
 import pyarrow.parquet as pq
 import polars as  pl
+from pyspark.sql import DataFrame as SparkDataFrame
 
 from utils.aws_utils import delete_prefix
 
 logger = logging.getLogger(__name__)
 
 
-def export_parquet(df:pl.DataFrame, bucket:str, prefix:str, basename_template:str, partition_cols: list[str] = None)-> None:
+def export_parquet(df, bucket:str, prefix:str, basename_template:str, partition_cols: list[str] = None)-> None:
     """
-    Writes a polars DataFrame to a parquet file in S3.
+    Writes a polars or pyspark DataFrame to a parquet file in S3.
 
     Args:
-        df (pl.DataFrame): The polars DataFrame to write.
+        df (pl.DataFrame | pyspark.sql.DataFrame): The DataFrame to write.
         bucket (str): The name of the S3 bucket.
         prefix (str): The prefix (path) in the S3 bucket where the file will be stored.
         basename_template (str): The template for the basename of the parquet file to be created.
         partition_cols (list[str], optional): Columns to partition the parquet output by.
     """
+    if isinstance(df, SparkDataFrame):
+        df = pl.from_pandas(df.toPandas())
+
     if df is None or df.is_empty():
         raise ValueError("The DataFrame is empty. Cannot write to Parquet.")
     if not isinstance(df, pl.DataFrame):
-        raise TypeError("The provided data is not a polars DataFrame.")
+        raise TypeError("The provided data is not a polars or pyspark DataFrame.")
 
     prefix = prefix.lstrip("/")
     s3_root = f"s3://{bucket}/{prefix}"

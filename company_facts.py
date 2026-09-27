@@ -1,3 +1,5 @@
+from datetime import date
+
 import requests
 from retrieve_company_tickers import get_company_tickers
 from utils.logger import logger
@@ -36,19 +38,18 @@ def get_us_gaap_facts(cik: str):
     company_facts = retrieve_company_facts(cik)
     us_gaap_facts = company_facts.get("facts", {}).get("us-gaap", {})
     logger.info(f"Found {len(us_gaap_facts)} us-gaap facts for CIK {cik}")
-    xlbr_lang= []
-    if us_gaap_facts is not None:
-        us_gaap_keys = list(us_gaap_facts.keys())
-        for key in us_gaap_keys:
-            fact = {"fact_name": key, "label": us_gaap_facts[key].get("label"), "description": us_gaap_facts[key].get("description")}
-            xlbr_lang.append(fact)
-        xlbr_lang_df = pl.DataFrame(xlbr_lang)
-        logger.info(f"Exporting us-gaap facts parquet for CIK {cik} to bucket secedgar-nikhil")
-        logger.info(f"First few rows for CIK {cik}:\n{xlbr_lang_df.head()}")
-        export_parquet(xlbr_lang_df, bucket="secedgar-nikhil", prefix=f"raw/company_us_gaap_facts", basename_template=f"{cik}_us_gaap_facts.parquet")
-        logger.info(f"Export complete for CIK {cik}")
+    fact_data= []
+    for fact_name, fact in us_gaap_facts.items():
+        fact_dict={"cik": cik, "fact_name": fact_name, "label": fact["label"]}
+        for unit_type in fact["units"]:
+            for unit in fact["units"][unit_type]:
+                fact_data.append({ **fact_dict,"unit_type": unit_type, **unit,
+          "val": float(unit["val"]),
+         }) 
+    
+    return fact_data
 
-    return us_gaap_facts
+
 if __name__ == "__main__":
     # tickers = get_company_tickers()
     # for entry in list(tickers.values())[:10]:
