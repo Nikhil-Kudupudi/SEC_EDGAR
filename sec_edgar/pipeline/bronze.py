@@ -8,7 +8,7 @@
 import polars as pl
 
 from sec_edgar.config import settings
-from sec_edgar.sec.facts import get_us_gaap_facts
+from sec_edgar.edgar_api.facts import get_us_gaap_facts
 from sec_edgar.storage.parquet import export_parquet
 
 BRONZE_FACTS = f"{settings.bronze_prefix}/us_gaap_facts"

@@ -1,7 +1,7 @@
 import polars as pl
 
 from sec_edgar.config import settings
-from sec_edgar.sec.client import get_json
+from sec_edgar.edgar_api.client import get_json
 from sec_edgar.storage.parquet import export_parquet
 from sec_edgar.utils.logger import logger
 
