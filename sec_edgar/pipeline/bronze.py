@@ -19,6 +19,10 @@ BRONZE_SCHEMA = {
     "start": pl.Utf8, "end": pl.Utf8, "val": pl.Float64, "accn": pl.Utf8,
     "fy": pl.Int64, "fp": pl.Utf8, "form": pl.Utf8, "filed": pl.Utf8, "frame": pl.Utf8,
 }
+# Same schema for Spark readers (e.g. reading the local JSON dump in jobs.run_local).
+BRONZE_DDL = ("cik string, fact_name string, label string, unit_type string, start string, "
+              "`end` string, val double, accn string, fy long, fp string, form string, "
+              "filed string, frame string")
 
 
 def build_bronze(ciks: list[str]) -> None:
