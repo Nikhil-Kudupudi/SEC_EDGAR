@@ -1,21 +1,36 @@
 """streamlit run dashboard/app.py -- executive view of one company's gold KPIs.
 
-Reads gold produced by `python -m jobs.run_local` (data/gold) or by the S3 jobs
-(set GOLD_DIR=s3://<bucket>/gold). The dashboard only reads gold: no business logic here.
+Reads gold from S3 (s3://<S3_BUCKET>/gold/{financials,kpis}/, written by the Spark jobs).
+Set GOLD_DIR to override, e.g. GOLD_DIR=data/gold for local runs.
+AWS credentials come from .env / the standard AWS environment variables.
+The dashboard only reads gold: no business logic here.
 """
 import os
 
 import pandas as pd
 import streamlit as st
+from dotenv import load_dotenv
 
-GOLD_DIR = os.getenv("GOLD_DIR", "data/gold")
+load_dotenv()
+
+BUCKET = os.getenv("S3_BUCKET", "secedgar-nikhil")
+GOLD_DIR = os.getenv("GOLD_DIR", f"s3://{BUCKET}/gold").rstrip("/")
 BILLION = 1e9
 
 
-@st.cache_data
+def _storage_options() -> dict | None:
+    if not GOLD_DIR.startswith("s3://"):
+        return None
+    key = os.getenv("AWS_ACCESS_KEY_ID") or os.getenv("AWS_ACCESS_KEY")
+    secret = os.getenv("AWS_SECRET_ACCESS_KEY") or os.getenv("AWS_SECRET")
+    # without explicit keys s3fs falls back to the default AWS credential chain
+    return {"key": key, "secret": secret} if key and secret else {}
+
+
+@st.cache_data(ttl=600, show_spinner="Loading gold from S3...")
 def load(name: str) -> pd.DataFrame:
-    path = f"{GOLD_DIR}/{name}.parquet" if GOLD_DIR.startswith("data") else f"{GOLD_DIR}/{name}"
-    return pd.read_parquet(path)
+    # Spark writes each gold table as a folder of parquet part files; pyarrow reads the folder.
+    return pd.read_parquet(f"{GOLD_DIR}/{name}/", storage_options=_storage_options())
 
 
 st.set_page_config(page_title="SEC EDGAR financials", layout="wide")  # must be first st call

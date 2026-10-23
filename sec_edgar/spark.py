@@ -14,6 +14,7 @@ def get_spark(app_name: str = "sec_edgar", s3: bool = True) -> SparkSession:
     builder = (
         SparkSession.builder.appName(app_name)
         .master("local[*]")
+        .config("spark.driver.memory", "4g")  # local mode: driver does all the work (default 1g is too tight)
         .config("spark.sql.session.timeZone", "UTC")
         # overwrite only the partitions present in the DataFrame, not the whole table
         .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
